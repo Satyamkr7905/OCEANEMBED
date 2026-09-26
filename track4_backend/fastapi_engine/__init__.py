@@ -1,0 +1,1 @@
+"""OceanEmbed FastAPI inference engine."""

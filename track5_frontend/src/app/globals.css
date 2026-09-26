@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-brand: #22d3ee;
+  --color-temp: #fb7185;
+  --color-salt: #2dd4bf;
+  --color-heat: #fb923c;
+  --glass: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #0a0f1e;
+  color: #e8f4fb;
+}
+
+@layer components {
+  .glass {
+    background: var(--glass);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(22px);
+    box-shadow: 0 10px 40px rgba(0, 10, 30, 0.32);
+  }
+}
+
+/* ---------- maplibre overrides ---------- */
+.maplibregl-map {
+  font: inherit;
+}
+.maplibregl-ctrl-group {
+  background: rgba(8, 24, 42, 0.78) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+}
+.maplibregl-ctrl-group button {
+  width: 32px !important;
+  height: 32px !important;
+  filter: invert(1) hue-rotate(180deg);
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ---------- custom range slider ---------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  border: 3px solid #082033;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.55);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  border: 3px solid #082033;
+  cursor: pointer;
+}
+input[type="range"].accent-heat::-webkit-slider-thumb {
+  background: var(--color-heat);
+}
+input[type="range"].accent-heat::-moz-range-thumb {
+  background: var(--color-heat);
+}
+
+/* ---------- scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(126, 182, 212, 0.35);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.55);
+}

@@ -1,0 +1,95 @@
+# Multi-source satellite + reanalysis catalogue
+# Overpass / composite windows are recorded to prevent diurnal aliasing in validation.
+
+cmems:
+  username_env: COPERNICUSMARINE_SERVICE_USERNAME
+  password_env: COPERNICUSMARINE_SERVICE_PASSWORD
+  # toolbox also accepts COPERNICUSMARINE_USERNAME / COPERNICUSMARINE_PASSWORD
+  chunk_days: 31
+
+glorys12v1:
+  product_id: GLOBAL_MULTIYEAR_PHY_001_030
+  dataset_id: cmems_mod_glo_phy_my_0.083deg_P1D-m
+  variables: [thetao, so]
+  native_resolution_deg: 0.083333
+  native_vertical_levels: 50
+  overpass_time: "reanalysis_daily_mean"
+  composite_window: "00:00–24:00 UTC"
+  notes: "GLORYS12V1 daily mean; assimilates ARGO, altimetry, SST."
+
+sealevel:
+  product_id: SEALEVEL_GLO_PHY_L4_MY_008_047
+  dataset_id: cmems_obs-sl_glo_phy-ssh_my_allsat-l4-duacs-0.125deg_P1D
+  variables: [sla, adt, ugos, vgos]
+  native_resolution_deg: 0.125
+  overpass_time: "tandem altimeter (Jason-3, Sentinel-3A/B); daily mapped"
+  composite_window: "daily L4 objective analysis"
+  notes: "SSH/SLA and geostrophic surface currents."
+
+sss_cmems:
+  product_id: MULTIOBS_GLO_PHY_S_SURFACE_MYNRT_015_013
+  dataset_id: cmems_obs-mob_glo_phy-sss_my_multi-l4-oi_P1D
+  variables: [sos]
+  native_resolution_deg: 0.25
+  overpass_time: "SMAP morning (~6 LT) / SMOS morning+evening; L4 blended"
+  composite_window: "daily OI"
+  notes: "Independent surface salinity; RFI-flagged pixels removed upstream in L4."
+
+oisst:
+  product: NOAA OISST v2.1 AVHRR-only
+  version: v02r01
+  native_resolution_deg: 0.25
+  overpass_time: "AVHRR polar orbiter; daily OI composite"
+  composite_window: "7-day interpolation window (final product ~14-day latency)"
+  ncei_url_template: "https://www.ncei.noaa.gov/data/sea-surface-temperature-optimum-interpolation/v2.1/access/avhrr/{yyyymm}/oisst-avhrr-v02r01.{yyyymmdd}.nc"
+  erddap_dataset: ncdcOisst21Agg
+  erddap_base: "https://coastwatch.pfeg.noaa.gov/erddap/griddap/ncdcOisst21Agg.nc"
+  variable: sst
+  notes: "Skin/sub-skin SST. Model 0 m is bulk; typical skin-bulk bias 0.1–0.3°C."
+
+winds:
+  backend: era5   # era5 | cmems
+  era5:
+    product: ERA5 single levels
+    dataset: reanalysis-era5-single-levels
+    variables: [10m_u_component_of_wind, 10m_v_component_of_wind]
+    native_resolution_deg: 0.25
+    overpass_time: "hourly analysis; resampled to UTC daily mean"
+    composite_window: "00–23 UTC average"
+  cmems:
+    dataset_id: cmems_obs-wind_glo_phy_my_l4_0.125deg_PT1H
+    variables: [eastward_wind, northward_wind]
+    native_resolution_deg: 0.125
+    overpass_time: "ASCAT morning/evening (~9:30 LT); L4 blended"
+    composite_window: "daily mean of hourly L4"
+    notes: "Rain-flagged scatterometer retrievals removed in L2/L3."
+
+etopo1:
+  product: ETOPO1 bedrock
+  erddap_url: "https://pae-paha.pacioos.hawaii.edu/erddap/griddap/etopo1_bedrock.nc"
+  variable: z
+  fallback_url: "https://www.ngdc.noaa.gov/mgg/global/relief/ETOPO1/data/bedrock/grid_registered/netcdf/ETOPO1_Bed_g_gmt4.grd.gz"
+
+iod:
+  # Standard DMI boxes extend south of the NIO reconstruction domain.
+  western:
+    lat_min: -10.0
+    lat_max: 10.0
+    lon_min: 50.0
+    lon_max: 70.0
+  eastern:
+    lat_min: -10.0
+    lat_max: 0.0
+    lon_min: 90.0
+    lon_max: 110.0
+  lags_days: [7, 14]
+
+physics:
+  omega: 7.292115e-5
+  f0: 1.5e-5
+  rho_air: 1.225
+  drag_coefficient: 0.0013
+  rho0: 1025.0
+  earth_radius_m: 6371000.0
+  beta_plane_latitude: 8.0
+  median_filter_size: 3

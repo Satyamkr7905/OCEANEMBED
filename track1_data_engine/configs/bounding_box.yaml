@@ -1,0 +1,67 @@
+# OceanEmbed SIH26066 — North Indian Ocean target grid
+# Cell-center 0.25° grid covering [5°N, 30°N] × [45°E, 105°E]
+# n_lat = (30-5)/0.25 = 100, n_lon = (105-45)/0.25 = 240
+
+domain:
+  name: north_indian_ocean
+  sub_basins:
+    arabian_sea:
+      lat_min: 5.0
+      lat_max: 30.0
+      lon_min: 45.0
+      lon_max: 80.0
+    bay_of_bengal:
+      lat_min: 5.0
+      lat_max: 30.0
+      lon_min: 80.0
+      lon_max: 105.0
+
+bbox:
+  lat_min: 5.0
+  lat_max: 30.0
+  lon_min: 45.0
+  lon_max: 105.0
+
+grid:
+  resolution_deg: 0.25
+  n_lat: 100
+  n_lon: 240
+  registration: cell_centers
+  # centers at lat_min + res/2 ... lat_max - res/2
+  lat_start: 5.125
+  lon_start: 45.125
+
+depths_m:
+  - 0
+  - 5
+  - 10
+  - 20
+  - 30
+  - 50
+  - 75
+  - 100
+  - 125
+  - 150
+  - 200
+  - 300
+  - 500
+  - 700
+  - 1000
+
+masks:
+  coastal_buffer_cells: 2
+  land_dilation_cells_for_gradients: 1
+  land_elevation_threshold_m: 0.0
+
+chronological_split:
+  train: ["2012-01-01", "2018-12-31"]
+  validation: ["2019-01-01", "2019-12-31"]
+  test: ["2020-01-01", "2021-12-31"]
+
+storage:
+  data_root: oceanembed
+  zarr_chunks:
+    time: 30
+    depth: 15
+    lat: 50
+    lon: 50

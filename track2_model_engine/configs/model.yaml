@@ -1,0 +1,59 @@
+# OceanEmbed Track 2 — model hyperparameters
+input:
+  window_days: 7
+  height: 100
+  width: 240
+  n_depths: 15
+  surface_channels:
+    - sst
+    - sss
+    - sla
+    - ugos
+    - vgos
+    - u10
+    - v10
+  extra_channels:
+    - w_e
+    - f_tilde
+    - bathymetry
+    - doy_sin
+    - doy_cos
+  n_channels: 12
+
+grid:
+  lat_start: 5.125
+  lon_start: 45.125
+  resolution_deg: 0.25
+  bob_lon_split: 80.0
+
+split:
+  train: ["2012-01-01", "2018-12-31"]
+  val: ["2019-01-01", "2019-12-31"]
+  test: ["2020-01-01", "2021-12-31"]
+
+model:
+  latent_dim: 512
+  stream_a_dim: 64
+  stream_b_dim: 64
+  n_depth_tokens: 8
+  n_heads: 8
+  dropout: 0.1
+  mlp_hidden: 256
+  unet_base: 32
+
+loss:
+  w_theta: 1.0
+  w_sp: 0.5
+  lambda_inv: 0.1
+  lambda_area: 1.0
+  inversion_eps: 0.05
+  barrier_ds_threshold: 0.15
+
+train:
+  batch_size: 2
+  num_workers: 4
+  lr: 3.0e-4
+  weight_decay: 1.0e-4
+  max_epochs: 80
+  precision: "16-mixed"
+  gradient_clip_val: 1.0

@@ -1,0 +1,34 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  inference:
+    build:
+      context: ..
+      dockerfile: track4_backend/fastapi_engine/Dockerfile
+    environment:
+      DATA_ROOT: /data
+      ONNX_PATH: /data/export/oceanembed.onnx
+      ALLOW_SYNTHETIC: "true"
+      ONNX_PROVIDERS: CUDAExecutionProvider,CPUExecutionProvider
+    volumes:
+      - ../oceanembed:/data
+    ports:
+      - "8000:8000"
+
+  gateway:
+    build:
+      context: ./express_gateway
+      dockerfile: Dockerfile
+    depends_on:
+      - inference
+      - redis
+    environment:
+      INFERENCE_URL: http://inference:8000
+      REDIS_URL: redis://redis:6379
+      PORT: "8080"
+      CACHE_TTL_SECONDS: "86400"
+    ports:
+      - "8080:8080"

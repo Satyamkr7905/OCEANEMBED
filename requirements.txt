@@ -1,0 +1,24 @@
+# OceanEmbed track1_data_engine
+numpy>=1.24
+scipy>=1.10
+xarray>=2023.1
+dask[array]>=2023.1
+zarr>=2.14,<3
+numcodecs>=0.11
+netCDF4>=1.6
+h5netcdf>=1.1
+pandas>=2.0
+pyyaml>=6.0
+tqdm>=4.65
+requests>=2.31
+copernicusmarine>=2.0
+cdsapi>=0.7
+xesmf>=0.8; sys_platform != "win32"
+esmpy>=8.4; sys_platform != "win32"
+pooch>=1.7
+torch>=2.1
+lightning>=2.2
+onnx>=1.15
+onnxscript>=0.1; python_version >= "3.9"
+gsw>=3.6
+google-genai>=1.10
