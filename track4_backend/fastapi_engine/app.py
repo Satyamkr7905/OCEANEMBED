@@ -154,10 +154,11 @@ def _crop(field: np.ndarray, lat_min: float, lat_max: float, lon_min: float, lon
     if iy.size == 0 or ix.size == 0:
         raise HTTPException(status_code=400, detail="bbox does not intersect the NIO grid")
     sl = field[np.ix_(iy, ix)]
+    clean_sl = np.where(np.isnan(sl), None, np.round(sl.astype(np.float64), 3))
     return {
         "lat": lat[iy].tolist(),
         "lon": lon[ix].tolist(),
-        "values": [[_finite(v) for v in row] for row in sl],
+        "values": clean_sl.tolist(),
         "nrows": int(iy.size),
         "ncols": int(ix.size),
         "bbox": [float(lon[ix[0]] - RESOLUTION / 2), float(lat[iy[0]] - RESOLUTION / 2),

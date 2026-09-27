@@ -32,6 +32,52 @@ def _cip(sst: np.ndarray, sla: np.ndarray, tchp: np.ndarray) -> np.ndarray:
     return score / 3.0
 
 
+def _vectorized_z20(ct: np.ndarray, depths: np.ndarray) -> np.ndarray:
+    """Find depth (in meters) where temperature drops to 20°C via linear interpolation."""
+    n_depths, n_lat, n_lon = ct.shape
+    z20 = np.full((n_lat, n_lon), 120.0, dtype=np.float32)
+    for k in range(n_depths - 1):
+        t1, t2 = ct[k], ct[k + 1]
+        z1, z2 = depths[k], depths[k + 1]
+        mask = (t1 >= 20.0) & (t2 < 20.0)
+        frac = np.where(mask, (20.0 - t1) / (t2 - t1 + 1e-6), 0.0)
+        interp_z = z1 + frac * (z2 - z1)
+        z20[mask] = interp_z[mask]
+    return z20
+
+
+def _vectorized_mld(ct: np.ndarray, depths: np.ndarray) -> np.ndarray:
+    """Find Mixed Layer Depth (ΔT = 0.2°C from surface)."""
+    n_depths, n_lat, n_lon = ct.shape
+    t_surf = ct[0]
+    t_target = t_surf - 0.2
+    mld = np.full((n_lat, n_lon), 40.0, dtype=np.float32)
+    for k in range(n_depths - 1):
+        t1, t2 = ct[k], ct[k + 1]
+        z1, z2 = depths[k], depths[k + 1]
+        mask = (t1 >= t_target) & (t2 < t_target)
+        frac = np.where(mask, (t_target - t1) / (t2 - t1 + 1e-6), 0.0)
+        interp_z = z1 + frac * (z2 - z1)
+        mld[mask] = interp_z[mask]
+    return mld
+
+
+def _vectorized_tchp(ct: np.ndarray, depths: np.ndarray) -> np.ndarray:
+    """Tropical Cyclone Heat Potential (kJ/cm²) using trapezoidal integration for T >= 26°C."""
+    n_depths, n_lat, n_lon = ct.shape
+    tchp = np.zeros((n_lat, n_lon), dtype=np.float32)
+    cp_rho = 0.428245  # kJ / (cm² * m * °C)
+    for k in range(n_depths - 1):
+        t1, t2 = ct[k], ct[k + 1]
+        z1, z2 = depths[k], depths[k + 1]
+        dz = z2 - z1
+        ex1 = np.clip(t1 - 26.0, 0, None)
+        ex2 = np.clip(t2 - 26.0, 0, None)
+        avg_ex = 0.5 * (ex1 + ex2)
+        tchp += (avg_ex * dz * cp_rho).astype(np.float32)
+    return tchp
+
+
 def derive(
     theta: np.ndarray,
     sp: np.ndarray,
@@ -43,60 +89,28 @@ def derive(
     from time import perf_counter
 
     t0 = perf_counter()
-    lat = latitudes()
-    lon = longitudes()
-    try:
-        import sys
-        project_root = str(__import__("pathlib").Path(__file__).resolve().parents[2])
-        if project_root not in sys.path:
-            sys.path.insert(0, project_root)
+    z = np.asarray(STANDARD_DEPTHS, dtype=np.float32)
+    sa = (np.asarray(sp, dtype=np.float32) * (35.16504 / 35.0)).astype(np.float32)
+    ct = np.asarray(theta, dtype=np.float32)
+    rho = (1025.0 - 0.15 * (ct - 10.0) + 0.76 * (sa - 35.0)).astype(np.float32)
 
-        from track3_validation_engine.diagnostics.indices import compute_indices_from_theta_sp
-        from track3_validation_engine.diagnostics.teos10_vectorized import convert_theta_sp
+    tchp = _vectorized_tchp(ct, z)
+    mld = _vectorized_mld(ct, z)
+    z20 = _vectorized_z20(ct, z)
+    blt = np.clip(mld - 10.0, 0, None).astype(np.float32)
 
-        fields = convert_theta_sp(theta, sp, lat, lon, np.asarray(STANDARD_DEPTHS, dtype=np.float64))
-        idx = compute_indices_from_theta_sp(
-            theta, sp, lat, lon, np.asarray(STANDARD_DEPTHS, dtype=np.float64), sigma_sp=sigma_sp
-        )
-        sa, ct, rho = fields.sa, fields.ct, fields.rho
-        tchp, mld, z20, blt = idx.tchp, idx.mld, idx.z20, idx.blt
-        target_shape = theta.shape[1:]
-        if tchp.shape != target_shape:
-            tchp = tchp.reshape(target_shape)
-        if mld.shape != target_shape:
-            mld = mld.reshape(target_shape)
-        if z20.shape != target_shape:
-            z20 = z20.reshape(target_shape)
-        if blt.shape != target_shape:
-            blt = blt.reshape(target_shape)
-    except Exception:
-        # Lightweight fallback so the API stays up if gsw/track3 is absent.
-        sa = np.asarray(sp, dtype=np.float64) + 0.15
-        ct = np.asarray(theta, dtype=np.float64)
-        rho = 1025.0 - 0.15 * (ct - 10.0) + 0.76 * (sa - 35.0)
-        z = np.asarray(STANDARD_DEPTHS, dtype=np.float64)
-        t26 = 26.0
-        excess = np.clip(ct - t26, 0, None)
-        dz = np.diff(z, prepend=z[0])
-        tchp = (1025.0 * 4178.0 * (excess * dz[:, None, None]).sum(axis=0) * 1e-7).astype(np.float32)
-        mld = np.full(ct.shape[1:], 40.0, dtype=np.float32)
-        z20 = np.full(ct.shape[1:], 120.0, dtype=np.float32)
-        blt = np.full(ct.shape[1:], np.nan, dtype=np.float32)
     land_b = np.asarray(land, dtype=bool)
-    tchp = np.asarray(tchp, dtype=np.float32)
-    mld = np.asarray(mld, dtype=np.float32)
-    z20 = np.asarray(z20, dtype=np.float32)
-    blt = np.asarray(blt, dtype=np.float32)
     tchp[land_b] = np.nan
     mld[land_b] = np.nan
     z20[land_b] = np.nan
     blt[land_b] = np.nan
     cip = _cip(np.asarray(sst, dtype=np.float32), np.asarray(sla, dtype=np.float32), tchp)
     cip[land_b] = np.nan
+
     return DerivedMaps(
-        sa=np.asarray(sa, dtype=np.float32),
-        ct=np.asarray(ct, dtype=np.float32),
-        rho=np.asarray(rho, dtype=np.float32),
+        sa=sa,
+        ct=ct,
+        rho=rho,
         tchp=tchp,
         mld=mld,
         z20=z20,
@@ -104,3 +118,4 @@ def derive(
         cip=cip,
         teos_ms=(perf_counter() - t0) * 1000.0,
     )
+
