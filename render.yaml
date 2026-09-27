@@ -1,0 +1,26 @@
+services:
+  # --- FastAPI Inference Engine ---
+  - type: web
+    name: oceanembed-fastapi
+    runtime: docker
+    dockerfilePath: track4_backend/fastapi_engine/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: ALLOW_SYNTHETIC
+        value: "true"
+      - key: GEMINI_API_KEY
+        sync: false   # set manually in Render dashboard
+
+  # --- Express Gateway ---
+  - type: web
+    name: oceanembed-gateway
+    runtime: docker
+    dockerfilePath: track4_backend/express_gateway/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: INFERENCE_URL
+        value: https://oceanembed-fastapi.onrender.com
+      - key: PORT
+        value: "8080"
