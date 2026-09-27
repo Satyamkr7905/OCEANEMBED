@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd track5_frontend && npm install && npm run build",
+  "outputDirectory": "track5_frontend/.next",
+  "installCommand": "cd track5_frontend && npm install",
+  "framework": "nextjs"
+}
