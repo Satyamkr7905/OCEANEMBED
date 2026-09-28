@@ -15,9 +15,9 @@ export default function OperationalConsole() {
   const [date, setDate] = useState(DEFAULT_DATE);
   const [depth, setDepth] = useState<DepthM>(100);
   const [layer, setLayer] = useState<MapLayerId>("tchp");
-  const [opacity, setOpacity] = useState(0.82);
+  const [opacity, setOpacity] = useState(0.50);
   const [selected, setSelected] = useState<{ lat: number; lon: number } | null>(DEFAULT_STATION);
-  const [showControls, setShowControls] = useState(false);
+  const [showControls, setShowControls] = useState(true);
   const [advisoryOpen, setAdvisoryOpen] = useState(false);
   const mapFlyRef = useRef<((lat: number, lon: number) => void) | null>(null);
   const { online, loading, profile, raster, error } = useOceanData(date, depth, layer, selected);
@@ -31,8 +31,8 @@ export default function OperationalConsole() {
     <section id="console" className="min-h-screen scroll-mt-4 bg-transparent">
       <HeaderBar date={date} onDate={setDate} online={online} />
 
-      <div className="p-4 md:p-5">
-        <div className="mb-4">
+      <div className="p-4 md:p-6">
+        <div className="mb-5">
           <MetricCards
             profile={profile}
             latencyMs={profile?.inferenceMs ?? 0}
@@ -40,9 +40,9 @@ export default function OperationalConsole() {
           />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="glass overflow-hidden rounded-3xl">
-            <div style={{ height: "560px" }}>
+            <div style={{ height: "620px" }}>
               <OceanMap
                 raster={raster}
                 layer={layer}
@@ -57,18 +57,18 @@ export default function OperationalConsole() {
             </div>
           </div>
 
-          <div className="glass rounded-3xl px-4 py-3">
+          <div className="glass rounded-3xl px-5 py-4">
             <button
               type="button"
               onClick={() => setShowControls(!showControls)}
               className="flex w-full items-center justify-between"
             >
               <div className="text-left">
-                  <h3 className="text-sm font-semibold text-white">Map layers</h3>
-                  <p className="text-xs text-white/45">Temperature, salinity, uncertainty, and derived indices from the inference API</p>
+                <h3 className="text-base font-semibold text-white">Map layers</h3>
+                <p className="text-sm text-white/55">Temperature, salinity, uncertainty, and derived indices from the inference API</p>
               </div>
               <svg
-                className={`h-4 w-4 text-white/40 transition-transform ${showControls ? "rotate-180" : ""}`}
+                className={`h-5 w-5 text-white/50 transition-transform ${showControls ? "rotate-180" : ""}`}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -79,15 +79,15 @@ export default function OperationalConsole() {
             </button>
 
             {showControls && (
-                <div className="mt-4 grid gap-5 border-t border-white/10 pt-4 md:grid-cols-2">
-                  <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-cyan-200/70">Layer</h4>
+              <div className="mt-4 grid gap-6 border-t border-white/10 pt-4 md:grid-cols-2">
+                <div>
+                  <h4 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-cyan-200/80">Layer</h4>
                   <VariableSelector value={layer} onChange={handleLayerChange} />
                 </div>
                 <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-cyan-200/70">Depth</h4>
+                  <h4 className="mb-2.5 text-sm font-semibold uppercase tracking-wide text-cyan-200/80">Depth</h4>
                   <DepthSlider value={depth} onChange={setDepth} />
-                  {error ? <p className="mt-3 text-xs text-rose-200">{error}</p> : null}
+                  {error ? <p className="mt-3 text-sm text-rose-200">{error}</p> : null}
                 </div>
               </div>
             )}

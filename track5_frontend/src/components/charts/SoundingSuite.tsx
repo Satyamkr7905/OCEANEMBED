@@ -29,43 +29,43 @@ export default function SoundingSuite({
   const [legendOpen, setLegendOpen] = useState(false);
   const derived = useMemo(() => (profile ? derivedSounding(profile) : null), [profile]);
   const stacked = tab === "all";
-  const chartH = stacked ? 420 : 520;
+  const chartH = stacked ? 500 : 620;
 
   return (
     <section className="glass rounded-3xl">
-      <header className="border-b border-white/10 px-5 py-4">
+      <header className="border-b border-white/10 px-6 py-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300">
+            <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">
               Scientific sounding
             </p>
-            <h3 className="mt-0.5 text-base font-semibold text-white">Vertical diagnostics</h3>
+            <h3 className="mt-1 text-lg font-bold text-white">Vertical diagnostics</h3>
             {selected ? (
-              <p className="mt-0.5 font-mono text-xs text-white/50">
+              <p className="mt-1 font-mono text-sm text-white/60">
                 {selected.lat.toFixed(2)}°N {selected.lon.toFixed(2)}°E
                 {profile ? ` · ${profile.date}` : ""}
               </p>
             ) : (
-              <p className="mt-0.5 text-xs text-white/40">Click the map to pin a station</p>
+              <p className="mt-1 text-sm text-white/50">Click the map to pin a station</p>
             )}
           </div>
           <button
             type="button"
             onClick={() => setLegendOpen((v) => !v)}
-            className="rounded-lg border border-white/15 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-wide text-cyan-100/80 hover:border-cyan-300 hover:text-cyan-200"
+            className="rounded-lg border border-white/15 px-3 py-2 font-mono text-xs font-semibold uppercase tracking-wide text-cyan-100/80 hover:border-cyan-300 hover:text-cyan-200"
           >
             {legendOpen ? "Hide legend" : "Thresholds"}
           </button>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-1 rounded-xl bg-white/5 p-1">
+        <div className="mt-4 flex flex-wrap gap-1.5 rounded-xl bg-white/5 p-1.5">
           {TABS.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => setTab(t.id)}
-              className={`rounded-lg px-3 py-1.5 font-mono text-[11px] font-semibold ${
-                tab === t.id ? "bg-cyan-400 text-slate-950 shadow-[0_0_18px_rgba(34,211,238,0.28)]" : "text-white/50 hover:text-white"
+              className={`rounded-lg px-4 py-2 font-mono text-xs font-semibold ${
+                tab === t.id ? "bg-cyan-400 text-slate-950 shadow-[0_0_18px_rgba(34,211,238,0.28)]" : "text-white/60 hover:text-white"
               }`}
             >
               {t.label}
@@ -81,9 +81,9 @@ export default function SoundingSuite({
       </header>
 
       {legendOpen && (
-        <div className="border-b border-white/10 bg-cyan-400/5 px-5 py-3 font-mono text-[11px] leading-relaxed text-white/65">
+        <div className="border-b border-white/10 bg-cyan-400/5 px-6 py-4 font-mono text-xs leading-relaxed text-white/70">
           <p className="font-semibold uppercase tracking-[0.16em] text-cyan-200">Physical thresholds</p>
-          <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
+          <ul className="mt-2.5 grid gap-2 sm:grid-cols-2">
             <li><span className="font-semibold text-amber-300">MLD</span> — density criterion Δρ = 0.03 kg/m³ from surface.</li>
             <li><span className="font-semibold text-sky-300">ILD</span> — isothermal layer, ΔT = 0.5 °C from SST.</li>
             <li><span className="font-semibold text-rose-300">Z₂₀ / D26</span> — 20 °C and 26 °C isotherms. TCHP integrates T−26 above D26.</li>
@@ -92,16 +92,16 @@ export default function SoundingSuite({
         </div>
       )}
 
-      <div className="p-4">
+      <div className="p-5">
         {!profile ? (
-          <div className="flex h-[320px] flex-col items-center justify-center text-center">
-            <p className="text-sm font-semibold text-white/80">No sounding loaded</p>
-            <p className="mt-1 max-w-xs text-xs text-white/40">
+          <div className="flex h-[380px] flex-col items-center justify-center text-center">
+            <p className="text-base font-semibold text-white/80">No sounding loaded</p>
+            <p className="mt-1.5 max-w-sm text-sm text-white/50">
               Pin a location on the North Indian Ocean map. Thermal, salinity and heat diagnostics appear here.
             </p>
           </div>
         ) : (
-          <div className={stacked ? "grid gap-4 lg:grid-cols-3" : "grid gap-4"}>
+          <div className={stacked ? "grid gap-5 lg:grid-cols-3" : "grid gap-5"}>
             {(stacked || tab === "thermal") && (
               <ChartCard eyebrow="Chart 1" title="Vertical thermal profile" note="θ, ±1σ, ARGO, MLD / Z₂₀">
                 <ThermalSoundingChart profile={profile} height={chartH} />
@@ -130,10 +130,10 @@ export default function SoundingSuite({
       </div>
 
       {profile && (
-        <footer className="flex items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
-          <div className="flex items-center gap-2">
+        <footer className="flex items-center justify-between gap-3 border-t border-white/10 px-6 py-3.5">
+          <div className="flex items-center gap-2.5">
             <span
-              className={`h-2.5 w-2.5 rounded-full ${
+              className={`h-3 w-3 rounded-full ${
                 profile.backend === "pytorch_real"
                   ? "bg-cyan-400"
                   : profile.backend === "amphan_case_study"
@@ -143,7 +143,7 @@ export default function SoundingSuite({
                       : "bg-amber-400"
               }`}
             />
-            <span className="font-mono text-[11px] text-white/50">
+            <span className="font-mono text-xs text-white/60">
               {profile.backend === "pytorch_real"
                 ? "PyTorch reconstruction"
                 : profile.backend === "amphan_case_study"
@@ -153,7 +153,7 @@ export default function SoundingSuite({
                     : "API sounding"}
             </span>
           </div>
-          <span className="font-mono text-[11px] text-white/40">{profile.inferenceMs.toFixed(0)} ms</span>
+          <span className="font-mono text-xs text-white/50">{profile.inferenceMs.toFixed(0)} ms</span>
         </footer>
       )}
     </section>
@@ -172,13 +172,13 @@ function ChartCard({
   children: ReactNode;
 }) {
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/[0.04] p-2">
-      <div className="flex items-baseline justify-between gap-2 px-2 pt-1">
+    <article className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 sm:p-4">
+      <div className="flex items-baseline justify-between gap-2 px-2 pt-1 mb-2">
         <div>
-          <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-cyan-200/50">{eyebrow}</p>
-          <h4 className="text-sm font-semibold text-white">{title}</h4>
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-200/60">{eyebrow}</p>
+          <h4 className="text-base font-bold text-white">{title}</h4>
         </div>
-        <p className="hidden text-right font-mono text-[10px] text-white/35 lg:block">{note}</p>
+        <p className="hidden text-right font-mono text-xs text-white/45 lg:block">{note}</p>
       </div>
       {children}
     </article>
