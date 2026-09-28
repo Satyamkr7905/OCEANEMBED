@@ -105,6 +105,17 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def _warmup_model() -> None:
+    """Eagerly load ONNX model engine and pre-fill cache on container launch."""
+    try:
+        get_engine()
+        _run_day_cached("2020-05-18")
+        print("[OceanEmbed FastAPI] Startup warm-up complete. Model & default date cached in RAM.")
+    except Exception as exc:
+        print(f"[OceanEmbed FastAPI] Warm-up notice: {exc}")
+
+
 def _finite(value: float | np.floating) -> float | None:
     v = float(value)
     return None if not np.isfinite(v) else v

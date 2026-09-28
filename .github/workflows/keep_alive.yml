@@ -1,0 +1,19 @@
+name: Keep OceanEmbed Backend Warm 24/7
+
+on:
+  schedule:
+    # Run every 10 minutes to prevent Render free tier from going to sleep (15m timeout)
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-services:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Express Gateway
+        run: |
+          curl -s -f -m 30 https://oceanembed-gateway.onrender.com/api/v1/health || echo "Gateway pinged"
+
+      - name: Ping FastAPI Engine
+        run: |
+          curl -s -f -m 30 https://oceanembed-fastapi.onrender.com/health || echo "FastAPI pinged"

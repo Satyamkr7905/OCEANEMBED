@@ -9,20 +9,24 @@ export const DEFAULT_STATION = { lat: 16.4, lon: 87.2 };
 
 export function useOceanData(date: string, depth: DepthM, layer: MapLayerId, selected: { lat: number; lon: number } | null) {
   const [online, setOnline] = useState(false);
+  const [isWaking, setIsWaking] = useState(false);
   const [profile, setProfile] = useState<OceanProfile | null>(null);
   const [raster, setRaster] = useState<RasterGrid | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Background keep-alive and ping check
   useEffect(() => {
     let alive = true;
-    const ping = () => {
-      pingGateway().then((ok) => {
-        if (alive) setOnline(ok);
-      });
+    const checkStatus = async () => {
+      const ok = await pingGateway();
+      if (alive) {
+        setOnline(ok);
+        if (ok) setIsWaking(false);
+      }
     };
-    ping();
-    const id = window.setInterval(ping, 15000);
+    void checkStatus();
+    const id = window.setInterval(checkStatus, 12000);
     return () => {
       alive = false;
       window.clearInterval(id);
@@ -31,14 +35,23 @@ export function useOceanData(date: string, depth: DepthM, layer: MapLayerId, sel
 
   const loadProfile = useCallback(async (lat: number, lon: number) => {
     setLoading(true);
+    setError(null);
+
+    // If request takes >3.5s, trigger cold-start waking banner
+    const wakingTimer = setTimeout(() => setIsWaking(true), 3500);
+
     try {
-      setProfile(await fetchProfile(lat, lon, date));
+      const data = await fetchProfile(lat, lon, date);
+      clearTimeout(wakingTimer);
+      setProfile(data);
       setError(null);
       setOnline(true);
+      setIsWaking(false);
     } catch {
+      clearTimeout(wakingTimer);
       setOnline(false);
-      setProfile(null);
-      setError("Sounding unavailable. The inference service did not return this station.");
+      setIsWaking(false);
+      setError("Sounding unavailable. The inference cloud server did not respond. Retrying background connection...");
     } finally {
       setLoading(false);
     }
@@ -50,20 +63,28 @@ export function useOceanData(date: string, depth: DepthM, layer: MapLayerId, sel
 
   useEffect(() => {
     let alive = true;
+    const wakingTimer = setTimeout(() => setIsWaking(true), 3500);
+
     fetchRaster(layer, date, depth)
       .then((grid) => {
+        clearTimeout(wakingTimer);
         if (!alive) return;
         setRaster(grid);
         setOnline(true);
+        setIsWaking(false);
       })
       .catch(() => {
+        clearTimeout(wakingTimer);
         if (!alive) return;
-        setRaster(null);
+        setOnline(false);
       });
+
     return () => {
       alive = false;
+      clearTimeout(wakingTimer);
     };
   }, [layer, date, depth]);
 
-  return { online, loading, profile, raster, error, reload: loadProfile };
+  return { online, isWaking, loading, profile, raster, error, reload: loadProfile };
 }
+

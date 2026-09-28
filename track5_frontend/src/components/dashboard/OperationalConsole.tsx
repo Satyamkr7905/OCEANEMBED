@@ -20,7 +20,7 @@ export default function OperationalConsole() {
   const [showControls, setShowControls] = useState(true);
   const [advisoryOpen, setAdvisoryOpen] = useState(false);
   const mapFlyRef = useRef<((lat: number, lon: number) => void) | null>(null);
-  const { online, loading, profile, raster, error } = useOceanData(date, depth, layer, selected);
+  const { online, isWaking, loading, profile, raster, error } = useOceanData(date, depth, layer, selected);
 
   const handleLayerChange = useCallback((id: MapLayerId) => {
     setLayer(id);
@@ -32,6 +32,25 @@ export default function OperationalConsole() {
       <HeaderBar date={date} onDate={setDate} online={online} />
 
       <div className="p-4 md:p-6">
+        {isWaking && (
+          <div className="mb-5 flex items-center justify-between rounded-2xl border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-amber-200 backdrop-blur-md shadow-lg transition-all animate-pulse">
+            <div className="flex items-center gap-3">
+              <span className="flex h-3 w-3 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-amber-100">
+                  ⚡ Waking up OceanEmbed Cloud backend services (Render free tier cold start)...
+                </p>
+                <p className="text-xs text-amber-300/80">
+                  First request after inactivity takes ~20–30s to boot containers. Connecting & loading inference maps automatically...
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mb-5">
           <MetricCards
             profile={profile}

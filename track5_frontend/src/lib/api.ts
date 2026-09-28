@@ -10,6 +10,48 @@ export class ApiOfflineError extends Error {
   }
 }
 
+/**
+ * Fetch wrapper with retry logic specifically designed for cloud cold-starts (e.g. Render free tier).
+ * Retries on 502, 503, 504, 524 timeouts or network errors.
+ */
+export async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  retries = 5,
+  backoffMs = 2500,
+  timeoutMs = 35000,
+): Promise<Response> {
+  let lastError: Error | null = null;
+  for (let i = 0; i <= retries; i++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        cache: "no-store",
+      });
+      clearTimeout(timeoutId);
+
+      // 502/503/504 indicates gateway or backend service is starting up (cold start)
+      if (res.status === 502 || res.status === 503 || res.status === 504 || res.status === 524) {
+        if (i < retries) {
+          await new Promise((r) => setTimeout(r, backoffMs));
+          continue;
+        }
+      }
+      return res;
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (i < retries) {
+        await new Promise((r) => setTimeout(r, backoffMs));
+      }
+    }
+  }
+  throw lastError ?? new ApiOfflineError("Max retries exceeded while waiting for backend service");
+}
+
 function unwrapProfile(payload: Record<string, unknown>): OceanProfile | null {
   const props =
     (payload.features as Array<{ properties?: Record<string, unknown> }> | undefined)?.[0]?.properties ?? payload;
@@ -53,7 +95,7 @@ function unwrapProfile(payload: Record<string, unknown>): OceanProfile | null {
 
 export async function fetchHealth(base = DEFAULT_BASE): Promise<{ ok: boolean; detail?: unknown }> {
   try {
-    const res = await fetch(`${base}/health`, { cache: "no-store" });
+    const res = await fetchWithRetry(`${base}/health`, {}, 3, 2000, 20000);
     if (!res.ok) return { ok: false };
     return { ok: true, detail: await res.json() };
   } catch {
@@ -68,7 +110,7 @@ export async function fetchProfile(
   base = DEFAULT_BASE,
 ): Promise<OceanProfile> {
   const url = `${base}/ocean/profile?lat=${lat}&lon=${lon}&date=${date}`;
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetchWithRetry(url, {}, 5, 2500, 35000);
   if (!res.ok) throw new ApiOfflineError(`profile ${res.status}`);
   const json = (await res.json()) as Record<string, unknown>;
   const parsed = unwrapProfile(json);
@@ -93,7 +135,7 @@ export async function fetchRaster(
   const url = INDEX_LAYERS.has(layer)
     ? `${base}/ocean/indices?date=${date}&index=${layer}`
     : `${base}/ocean/layer?date=${date}&depth=${depth}&variable=${layerVariable(layer)}`;
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetchWithRetry(url, {}, 5, 2500, 35000);
   if (!res.ok) throw new ApiOfflineError(`raster ${res.status}`);
   const json = (await res.json()) as {
     features?: Array<{ properties?: Record<string, unknown> }>;
@@ -138,12 +180,11 @@ export async function fetchAdvisory(
   payload: AdvisoryRequest,
   base = DEFAULT_BASE,
 ): Promise<AdvisoryResponse> {
-  const res = await fetch(`${base}/ocean/advisory`, {
+  const res = await fetchWithRetry(`${base}/ocean/advisory`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    cache: "no-store",
     body: JSON.stringify(payload),
-  });
+  }, 4, 2500, 45000);
   if (!res.ok) {
     throw new ApiOfflineError(`advisory ${res.status}`);
   }
@@ -155,3 +196,4 @@ export async function fetchAdvisory(
 }
 
 export type { IndexVar };
+
