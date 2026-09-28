@@ -105,15 +105,21 @@ app.add_middleware(
 )
 
 
+import threading
+
+
 @app.on_event("startup")
 def _warmup_model() -> None:
-    """Eagerly load ONNX model engine and pre-fill cache on container launch."""
-    try:
-        get_engine()
-        _run_day_cached("2020-05-18")
-        print("[OceanEmbed FastAPI] Startup warm-up complete. Model & default date cached in RAM.")
-    except Exception as exc:
-        print(f"[OceanEmbed FastAPI] Warm-up notice: {exc}")
+    """Eagerly load ONNX model engine and pre-fill cache asynchronously on container launch."""
+    def _async_warmup() -> None:
+        try:
+            get_engine()
+            _run_day_cached("2020-05-18")
+            print("[OceanEmbed FastAPI] Async warm-up complete. Model & default date cached in RAM.")
+        except Exception as exc:
+            print(f"[OceanEmbed FastAPI] Warm-up notice: {exc}")
+
+    threading.Thread(target=_async_warmup, daemon=True).start()
 
 
 def _finite(value: float | np.floating) -> float | None:
