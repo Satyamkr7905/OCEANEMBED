@@ -15,6 +15,7 @@
     "@deck.gl/layers": "^9.0.38",
     "@deck.gl/mapbox": "^9.0.38",
     "@deck.gl/react": "^9.0.38",
+    "@vercel/analytics": "^2.0.1",
     "maplibre-gl": "^4.7.1",
     "next": "^14.2.15",
     "plotly.js": "^2.35.2",
